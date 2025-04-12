@@ -1,0 +1,31 @@
+[package]
+name = "biolens"
+version = "0.0.1"
+edition = "2021"
+authors = ["Sebastián Stupák"]
+description = "Bioinformatics analysis CLI tool"
+license = "MIT"
+
+[dependencies]
+biolens-common = { path = "../common" }
+clap = { version = "4.5.36", features = ["derive"] }
+# Other core dependencies
+
+[features]
+visualization = ["biolens-viz"]
+
+[dependencies.biolens-viz]
+path = "../viz"
+optional = true
+
+[dev-dependencies]
+assert_cmd = "2.0"
+predicates = "3.0"
+
+[[bin]]
+name = "biolens"
+path = "src/main.rs"
+
+[lib]
+name = "biolens_core"
+path = "src/lib.rs"
