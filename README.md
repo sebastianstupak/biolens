@@ -1,13 +1,14 @@
 # BioLens
 
-[![Build](https://github.com/sebastianstupak/biolens/actions/workflows/build.yml/badge.svg)](https://github.com/sebastianstupak/biolens/actions/workflows/build.yml)
+![Build](https://github.com/sebastianstupak/biolens/actions/workflows/build.yml/badge.svg)
 [![codecov](https://codecov.io/gh/sebastianstupak/biolens/graph/badge.svg?token=V98LV8E5AJ)](https://codecov.io/gh/sebastianstupak/biolens)
 
 BioLens is a command-line tool for bioinformatics analysis and visualization.
 
 ## Features
 
-- TODO
+- Work in progress - **BAM Coverage Analysis**: Calculate and visualize coverage from BAM file
+- Work in progress - **Sequence Comparison**: Perform pairwise sequence alignments with customizable visualization
 
 ## Installation
 

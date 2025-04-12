@@ -79,7 +79,7 @@ jobs:
           args: --release --workspace --all-features
 
       - name: Upload Linux artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: biolens-linux
           path: target/release/biolens
@@ -115,7 +115,7 @@ jobs:
           args: --release --workspace --all-features
 
       - name: Upload platform artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.artifact_path }}
