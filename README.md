@@ -19,12 +19,15 @@ cargo install --git https://github.com/sebastianstupak/biolens --features visual
 
 ## Usage
 
-### BAM coverage analysis
-
+```bash
+# BAM coverage analysis
 biolens bam-coverage -i sample.bam
 biolens bamcov -i sample.bam -r chr1:1000-2000 -v
 
-### Sequence comparison
+# Sequence comparison
+biolens seq-compare -a seq1.fa -b seq2.fa
+biolens seqcomp -a seq1.fa -b seq2.fa -v
+```
 
 ## Development
 
