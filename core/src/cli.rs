@@ -1,8 +1,8 @@
-use clap::{Command, ArgMatches};
-use std::collections::HashMap;
-use crate::commands::{common::CommandInfo};
 use crate::commands::bamcov;
+use crate::commands::common::CommandInfo;
 use crate::commands::seqcomp;
+use clap::{ArgMatches, Command};
+use std::collections::HashMap;
 
 pub fn build_cli() -> Command {
     let mut app = Command::new("biolens")
@@ -31,9 +31,12 @@ pub fn dispatch_command(matches: ArgMatches) {
             if let Some(handler) = command_map.get(cmd_name) {
                 handler(sub_matches);
             } else {
-                println!("Unknown command: {}. Use --help to see available commands.", cmd_name);
+                println!(
+                    "Unknown command: {}. Use --help to see available commands.",
+                    cmd_name
+                );
             }
-        },
+        }
         None => {
             println!("No command specified. Use --help to see available commands.");
         }

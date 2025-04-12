@@ -1,3 +1,3 @@
 pub mod bamcov;
-pub mod seqcomp;
 pub mod constants;
+pub mod seqcomp;

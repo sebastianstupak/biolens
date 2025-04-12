@@ -1,6 +1,6 @@
-use clap::{Command, Arg, ArgMatches};
-use super::super::common::{CommandInfo, viz_arg, with_visualization};
-use super::{META, handler};
+use super::super::common::{viz_arg, with_visualization, CommandInfo};
+use super::{handler, META};
+use clap::{Arg, ArgMatches, Command};
 
 pub fn command_info() -> CommandInfo {
     CommandInfo {
