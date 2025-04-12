@@ -6,7 +6,7 @@ env:
   CARGO_TERM_COLOR: always
 jobs:
   build:
-    name: Build and Test
+    name: Build and test on ubuntu
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
