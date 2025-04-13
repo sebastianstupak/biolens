@@ -1,14 +1,11 @@
 # BioLens
 
 [![Build](https://github.com/sebastianstupak/biolens/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sebastianstupak/biolens/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/sebastianstupak/biolens/graph/badge.svg?token=V98LV8E5AJ)](https://codecov.io/gh/sebastianstupak/biolens)
+[![Codecov](https://codecov.io/gh/sebastianstupak/biolens/graph/badge.svg?token=V98LV8E5AJ)](https://codecov.io/gh/sebastianstupak/biolens)
 
 BioLens is a command-line tool for bioinformatics analysis and visualization.
 
-## Features
-
-- Work in progress - **BAM Coverage Analysis**: Calculate and visualize coverage from BAM file
-- Work in progress - **Sequence Comparison**: Perform pairwise sequence alignments with customizable visualization
+_NOTE: A small side project created in order to learn Rust and the domain of bioinformatics._
 
 ## Installation
 
@@ -17,17 +14,16 @@ BioLens is a command-line tool for bioinformatics analysis and visualization.
 cargo install --git https://github.com/sebastianstupak/biolens --features visualization
 ```
 
-## Usage
+## Roadmap
 
-```bash
-# BAM coverage analysis
-biolens bam-coverage -i sample.bam
-biolens bamcov -i sample.bam -r chr1:1000-2000 -v
+- Validate file (FASTA, FASTQ, SAM/BAM, VCF, GFF, GTF)
+- SAM/BAM coverage
+- Sequence comparison
+- Tool installation + Documentation generation
 
-# Sequence comparison
-biolens seq-compare -a seq1.fa -b seq2.fa
-biolens seqcomp -a seq1.fa -b seq2.fa -v
-```
+## Features
+
+- TODO:
 
 ## Development
 
@@ -40,6 +36,5 @@ BioLens is built with Rust and uses a modular architecture:
 To build from source with all features:
 
 ```bash
-# Install from source
 cargo build --workspace --features visualization
 ```
