@@ -1,5 +1,7 @@
 pub mod definition;
+pub mod fasta_validator;
 pub mod handler;
+pub mod sam_validator;
 
 use crate::commands::common::CommandMeta;
 
