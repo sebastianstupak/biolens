@@ -1,7 +1,5 @@
 use super::fasta_validator;
 use super::sam_validator;
-use std::fs::File;
-use std::io::{self, BufRead, BufReader};
 use std::path::Path;
 
 pub fn validate(file_path: &str) -> bool {
