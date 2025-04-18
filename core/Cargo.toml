@@ -9,7 +9,8 @@ license = "MIT"
 [dependencies]
 biolens-common = { path = "../common" }
 clap = { version = "4.5.36", features = ["derive"] }
-# Other core dependencies
+log = "0.4"
+env_logger = "0.10"
 
 [features]
 visualization = ["biolens-viz"]

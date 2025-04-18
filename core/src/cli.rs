@@ -2,7 +2,8 @@ use crate::commands::bamcov;
 use crate::commands::common::CommandInfo;
 use crate::commands::seqcomp;
 use crate::commands::validate;
-use clap::{ArgMatches, Command};
+use clap::{Arg, ArgMatches, Command};
+use log::{debug, info};
 use std::collections::HashMap;
 
 struct CommandModule {
@@ -38,7 +39,16 @@ pub fn build_cli() -> Command {
     let mut app = Command::new("biolens")
         .version("0.0.1")
         .author("Sebastián Stupák")
-        .about("Bioinformatics analysis CLI tool");
+        .about("Bioinformatics analysis CLI tool")
+        // Add global verbose flag that applies to all commands
+        .arg(
+            Arg::new("verbose")
+                .short('v')
+                .long("verbose")
+                .help("Enable verbose output")
+                .global(true)
+                .action(clap::ArgAction::SetTrue),
+        );
 
     for module in get_command_modules() {
         app = app.subcommand((module.command_fn)());
@@ -48,20 +58,24 @@ pub fn build_cli() -> Command {
 }
 
 pub fn dispatch_command(matches: ArgMatches) {
+    let verbose = matches.get_flag("verbose");
+    debug!("Dispatching command with verbose={}", verbose);
+
     let command_map = build_command_map();
     match matches.subcommand() {
         Some((cmd_name, sub_matches)) => {
             if let Some(handler) = command_map.get(cmd_name) {
+                debug!("Executing command: {}", cmd_name);
                 handler(sub_matches);
             } else {
-                println!(
+                info!(
                     "Unknown command: {}. Use --help to see available commands.",
                     cmd_name
                 );
             }
         }
         None => {
-            println!("No command specified. Use --help to see available commands.");
+            info!("No command specified. Use --help to see available commands.");
         }
     }
 }

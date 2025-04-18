@@ -1,48 +1,56 @@
 use super::fasta_validator;
 use super::sam_validator;
+use log::{debug, error, info, warn};
 use std::path::Path;
 
 pub fn validate(file_path: &str) -> bool {
-    println!("Validating file: {}", file_path);
+    info!("Validating file: {}", file_path);
 
     let path = Path::new(file_path);
     if path.extension().is_none() {
-        println!("Error: File has no extension!");
+        error!("File has no extension: {}", file_path);
         return false;
     }
 
     let extension = path.extension().unwrap().to_string_lossy().to_lowercase();
+    debug!("File extension detected: {}", extension);
 
     match extension.as_str() {
-        "sam" => sam_validator::validate_sam(file_path),
+        "sam" => {
+            debug!("Processing as SAM file");
+            sam_validator::validate_sam(file_path)
+        }
         "bam" => {
-            println!("BAM validation not yet implemented");
+            warn!("BAM validation not yet implemented");
             false
         }
         "fa" | "fasta" | "fna" | "faa" | "ffn" | "frn" | "fas" | "seq" | "mpfa" | "csfasta"
-        | "pfa" => fasta_validator::validate_fasta(file_path),
+        | "pfa" => {
+            debug!("Processing as FASTA file");
+            fasta_validator::validate_fasta(file_path)
+        }
         "fq" | "fastq" => {
-            println!("FASTQ validation not yet implemented");
+            warn!("FASTQ validation not yet implemented");
             false
         }
         "vcf" => {
-            println!("VCF validation not yet implemented");
+            warn!("VCF validation not yet implemented");
             false
         }
         "bed" => {
-            println!("BED validation not yet implemented");
+            warn!("BED validation not yet implemented");
             false
         }
         "gff" | "gff3" => {
-            println!("GFF validation not yet implemented");
+            warn!("GFF validation not yet implemented");
             false
         }
         "gtf" => {
-            println!("GTF validation not yet implemented");
+            warn!("GTF validation not yet implemented");
             false
         }
         _ => {
-            println!("Unsupported file format: {}", extension);
+            error!("Unsupported file format: {}", extension);
             false
         }
     }
