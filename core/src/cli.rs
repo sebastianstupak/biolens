@@ -2,9 +2,9 @@ use crate::commands::bamcov;
 use crate::commands::common::CommandInfo;
 use crate::commands::seqcomp;
 use crate::commands::validate;
-use clap::{Arg, ArgMatches, Command};
-use log::{debug, info};
+use clap::{Arg, ArgAction, ArgMatches, Command};
 use std::collections::HashMap;
+use tracing::{debug, info};
 
 struct CommandModule {
     definition_fn: fn() -> CommandInfo,
@@ -40,26 +40,50 @@ pub fn build_cli() -> Command {
         .version("0.0.1")
         .author("Sebastián Stupák")
         .about("Bioinformatics analysis CLI tool")
-        // Add global verbose flag that applies to all commands
+        // Add global logging options
         .arg(
             Arg::new("verbose")
                 .short('v')
                 .long("verbose")
-                .help("Enable verbose output")
-                .global(true)
-                .action(clap::ArgAction::SetTrue),
+                .help("Enable verbose output (can be used multiple times for increased verbosity)")
+                .action(ArgAction::Count)
+                .global(true),
+        )
+        .arg(
+            Arg::new("log-file")
+                .long("log-file")
+                .help("Write logs to file")
+                .action(ArgAction::SetTrue)
+                .global(true),
+        )
+        .arg(
+            Arg::new("json")
+                .long("json-logs")
+                .help("Output logs in JSON format (useful for machine parsing)")
+                .action(ArgAction::SetTrue)
+                .global(true),
+        )
+        .arg(
+            Arg::new("config")
+                .short('c')
+                .long("config")
+                .help("Path to configuration file")
+                .value_name("FILE")
+                .global(true),
         );
 
     for module in get_command_modules() {
         app = app.subcommand((module.command_fn)());
     }
-
     app
 }
 
 pub fn dispatch_command(matches: ArgMatches) {
-    let verbose = matches.get_flag("verbose");
-    debug!("Dispatching command with verbose={}", verbose);
+    let verbosity_count = matches.get_count("verbose");
+    debug!(
+        "Command dispatched with verbosity level {}",
+        verbosity_count
+    );
 
     let command_map = build_command_map();
     match matches.subcommand() {
