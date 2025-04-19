@@ -1,14 +1,19 @@
 name: CD - Documentation
-
 on:
-  push:
-    branches: [main]
+  workflow_run:
+    workflows: ["Build and Test"]
+    types:
+      - completed
+    branches:
+      - main
 
 jobs:
   build:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -21,11 +26,11 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-          cache: npm
-          cache-dependency-path: web-docs/package-lock.json
+          cache: yarn
+          cache-dependency-path: web-docs/yarn.lock
 
       - name: Install dependencies
-        run: cd web-docs && npm install
+        run: cd web-docs && yarn install
 
       - name: Copy Rust docs
         run: |
@@ -33,11 +38,10 @@ jobs:
           cp -r target/doc/* web-docs/static/rustdoc/
 
       - name: Build website
-        run: cd web-docs && npm run build
+        run: cd web-docs && yarn build
 
       - name: Deploy to GitHub Pages
-        if: github.event_name != 'pull_request'
         uses: peaceiris/actions-gh-pages@v4
-        with:cc
+        with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./web-docs/build
