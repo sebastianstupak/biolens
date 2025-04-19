@@ -1,6 +1,7 @@
 # BioLens
 
 [![Build](https://github.com/sebastianstupak/biolens/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sebastianstupak/biolens/actions/workflows/ci.yml)
+[![Documentation](https://github.com/sebastianstupak/biolens/actions/workflows/cd-documentation.yml/badge.svg)](https://github.com/sebastianstupak/biolens/actions/workflows/cd-documentation.yml)
 [![Codecov](https://codecov.io/gh/sebastianstupak/biolens/graph/badge.svg?token=V98LV8E5AJ)](https://codecov.io/gh/sebastianstupak/biolens)
 
 BioLens is a command-line tool for bioinformatics analysis and visualization.

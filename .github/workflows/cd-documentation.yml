@@ -1,4 +1,6 @@
-name: CD - Documentation
+name: Documentation
+run-name: CD - Documentation (#${{ github.run_number }})
+
 on:
   workflow_dispatch:
   workflow_run:
@@ -8,8 +10,13 @@ on:
     branches:
       - main
 
+concurrency:
+  group: cd-docs-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
+    name: Build and deploy to GitHub pages
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
