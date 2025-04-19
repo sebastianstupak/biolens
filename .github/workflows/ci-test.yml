@@ -2,8 +2,6 @@ name: Test
 run-name: CI - Test (#${{ github.run_number }} - ${{ github.event.head_commit.message }})
 
 on:
-  push:
-    branches: [main]
   workflow_call:
 
 concurrency:
