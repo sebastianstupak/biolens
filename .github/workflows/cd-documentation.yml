@@ -1,0 +1,43 @@
+name: CD - Documentation
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+
+      - name: Generate Rust docs
+        run: cargo doc --no-deps
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: web-docs/package-lock.json
+
+      - name: Install dependencies
+        run: cd web-docs && npm install
+
+      - name: Copy Rust docs
+        run: |
+          mkdir -p web-docs/static/rustdoc
+          cp -r target/doc/* web-docs/static/rustdoc/
+
+      - name: Build website
+        run: cd web-docs && npm run build
+
+      - name: Deploy to GitHub Pages
+        if: github.event_name != 'pull_request'
+        uses: peaceiris/actions-gh-pages@v4
+        with:cc
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./web-docs/build
