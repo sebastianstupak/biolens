@@ -64,11 +64,6 @@ const config: Config = {
           label: "Documentation",
         },
         {
-          to: "/rustdoc/biolens/index.html",
-          label: "API Reference",
-          position: "left",
-        },
-        {
           href: "https://github.com/sebastianstupak/biolens",
           label: "GitHub",
           position: "right",

@@ -14,15 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Setup Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-
-      - name: Generate Rust docs
-        run: cargo doc --no-deps
-
       - uses: actions/setup-node@v3
         with:
           node-version: 18
@@ -31,11 +22,6 @@ jobs:
 
       - name: Install dependencies
         run: cd web-docs && yarn install
-
-      - name: Copy Rust docs
-        run: |
-          mkdir -p web-docs/static/rustdoc
-          cp -r target/doc/* web-docs/static/rustdoc/
 
       - name: Build website
         run: cd web-docs && yarn build
