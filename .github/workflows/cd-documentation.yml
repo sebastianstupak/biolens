@@ -1,4 +1,4 @@
-name: Documentation
+name: CD - Documentation
 run-name: CD - Documentation (#${{ github.run_number }})
 
 on:

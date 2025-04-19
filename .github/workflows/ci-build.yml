@@ -1,0 +1,110 @@
+name: CI - Build
+run-name: CI - Build (#${{ github.run_number }})
+
+on:
+  workflow_call:
+    inputs:
+      build_visualization:
+        description: "Build with visualization features"
+        required: false
+        type: boolean
+        default: false
+      upload_artifacts:
+        description: "Upload built artifacts"
+        required: false
+        type: boolean
+        default: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-standard:
+    name: Build Standard Version
+    runs-on: ${{ matrix.os }}
+    needs: [check-code]
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: biolens-linux
+            artifact_path: target/release/biolens
+          - os: windows-latest
+            artifact_name: biolens-windows
+            artifact_path: target/release/biolens.exe
+          - os: macos-latest
+            artifact_name: biolens-macos
+            artifact_path: target/release/biolens
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup override set stable
+
+      - name: Cargo cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build release binary
+        run: cargo build --release
+
+      - name: Upload standard artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: error
+        if: inputs.upload_artifacts
+
+  build-visualization:
+    name: Build Visualization Version
+    runs-on: ${{ matrix.os }}
+    needs: [check-code]
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: biolens-viz-linux
+            artifact_path: target-viz/release/biolens
+          - os: windows-latest
+            artifact_name: biolens-viz-windows
+            artifact_path: target-viz/release/biolens.exe
+          - os: macos-latest
+            artifact_name: biolens-viz-macos
+            artifact_path: target-viz/release/biolens
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup override set stable
+
+      - name: Cargo cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target-viz
+          key: ${{ runner.os }}-cargo-viz-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build release binary with visualization
+        run: cargo build --release --features visualization
+        env:
+          CARGO_TARGET_DIR: ./target-viz
+
+      - name: Upload visualization artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: error
+        if: inputs.upload_artifacts

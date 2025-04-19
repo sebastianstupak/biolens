@@ -1,109 +1,28 @@
-name: Build
+name: CI - Build & Test
 run-name: CI - Build & Test (#${{ github.run_number }} - ${{ github.event.head_commit.message }})
 
 on:
   push:
+    branches: [main]
+  pull_request:
     branches: [main]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  CARGO_TERM_COLOR: always
 jobs:
-  test-ubuntu:
-    name: Build and test on Ubuntu
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+  test:
+    name: Run Tests
+    uses: ./.github/workflows/ci-test.yml
+    secrets: inherit
 
-      - name: Setup Rust
-        run: |
-          rustup toolchain install stable --profile minimal
-          rustup override set stable
-          rustup component add rustfmt clippy
-
-      - name: Cargo cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Check format
-        run: cargo fmt --all -- --check
-
-      - name: Run Clippy
-        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
-
-      - name: Build
-        run: cargo build --workspace --all-features
-
-      - name: Run tests with all features
-        run: cargo test --workspace --features visualization
-
-      - name: Install cargo-tarpaulin for code coverage
-        run: cargo install cargo-tarpaulin --version 0.22.0
-
-      - name: Generate code coverage
-        run: cargo tarpaulin --workspace --features visualization --out Xml
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./cobertura.xml
-          fail_ci_if_error: false
-
-      - name: Build release binary
-        run: cargo build --release --workspace --all-features
-
-      - name: Upload Linux artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: biolens-linux
-          path: target/release/biolens
-          if-no-files-found: error
-
-  build-platforms:
-    name: Build on ${{ matrix.os }}
-    needs: test-ubuntu
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: windows-latest
-            artifact_name: biolens-windows
-            artifact_path: target/release/biolens.exe
-          - os: macos-latest
-            artifact_name: biolens-macos
-            artifact_path: target/release/biolens
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Rust
-        run: |
-          rustup toolchain install stable --profile minimal
-          rustup override set stable
-
-      - name: Cargo cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Build release binary
-        run: cargo build --release --workspace --all-features
-
-      - name: Upload platform artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.artifact_path }}
-          if-no-files-found: error
+  build:
+    name: Build Binaries
+    needs: test
+    if: success()
+    uses: ./.github/workflows/ci-build.yml
+    with:
+      build_visualization: true
+      upload_artifacts: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    secrets: inherit

@@ -1,0 +1,173 @@
+name: CD - Release
+run-name: CD - Release (#${{ github.run_number }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g., v0.1.0)"
+        required: true
+        type: string
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+    branches:
+      - main
+
+# Ensure this workflow can only run on main branch
+permissions:
+  contents: write
+
+concurrency:
+  group: cd-release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-branch:
+    name: Check Branch
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    steps:
+      - run: echo "Running on main branch or manually triggered"
+
+  prepare-release:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    needs: [check-branch]
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    outputs:
+      version: ${{ steps.set-version.outputs.version }}
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set version
+        id: set-version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            # Auto-generate version based on semver from Cargo.toml
+            VERSION=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)
+            echo "version=v${VERSION}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.set-version.outputs.version }}
+          release_name: Release ${{ steps.set-version.outputs.version }}
+          draft: false
+          prerelease: false
+
+  publish-release:
+    name: Publish Release
+    needs: [prepare-release]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - artifact_name: biolens-linux
+            package_name: biolens-linux-x86_64.tar.gz
+            content_type: application/gzip
+
+          - artifact_name: biolens-macos
+            package_name: biolens-macos-x86_64.tar.gz
+            content_type: application/gzip
+
+          - artifact_name: biolens-windows
+            package_name: biolens-windows-x86_64.zip
+            content_type: application/zip
+
+          - artifact_name: biolens-viz-linux
+            package_name: biolens-viz-linux-x86_64.tar.gz
+            content_type: application/gzip
+
+          - artifact_name: biolens-viz-macos
+            package_name: biolens-viz-macos-x86_64.tar.gz
+            content_type: application/gzip
+
+          - artifact_name: biolens-viz-windows
+            package_name: biolens-viz-windows-x86_64.zip
+            content_type: application/zip
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: ci.yml
+          workflow_conclusion: success
+          name: ${{ matrix.artifact_name }}
+          path: ./artifact
+
+      - name: Package artifact (Unix)
+        if: endsWith(matrix.package_name, '.tar.gz')
+        run: |
+          mkdir -p ./dist
+          chmod +x ./artifact/biolens
+          tar -C ./artifact -czf ./dist/${{ matrix.package_name }} biolens
+
+      - name: Package artifact (Windows)
+        if: endsWith(matrix.package_name, '.zip')
+        run: |
+          mkdir -p ./dist
+          cd ./artifact
+          zip -r ../dist/${{ matrix.package_name }} biolens.exe
+          cd ..
+
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare-release.outputs.upload_url }}
+          asset_path: ./dist/${{ matrix.package_name }}
+          asset_name: ${{ matrix.package_name }}
+          asset_content_type: ${{ matrix.content_type }}
+
+  upload-install-scripts:
+    name: Upload Installation Scripts
+    needs: prepare-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update repository name in scripts
+        run: |
+          if [ -f "install.sh" ]; then
+            sed -i "s|REPO=\".*\"|REPO=\"$GITHUB_REPOSITORY\"|g" install.sh
+          fi
+
+          if [ -f "install.ps1" ]; then
+            sed -i "s|\$repo = \".*\"|\$repo = \"$GITHUB_REPOSITORY\"|g" install.ps1
+          fi
+
+      - name: Upload Unix install script
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare-release.outputs.upload_url }}
+          asset_path: ./install.sh
+          asset_name: install.sh
+          asset_content_type: text/plain
+        if: hashFiles('install.sh') != ''
+
+      - name: Upload Windows install script
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare-release.outputs.upload_url }}
+          asset_path: ./install.ps1
+          asset_name: install.ps1
+          asset_content_type: text/plain
+        if: hashFiles('install.ps1') != ''
