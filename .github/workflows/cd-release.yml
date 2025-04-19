@@ -9,7 +9,7 @@ on:
         required: true
         type: string
   workflow_run:
-    workflows: ["CI"]
+    workflows: ["CI - Build & Test"]
     types:
       - completed
     branches:

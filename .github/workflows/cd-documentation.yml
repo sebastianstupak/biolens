@@ -4,7 +4,7 @@ run-name: CD - Documentation (#${{ github.run_number }})
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: ["Build"]
+    workflows: ["CI - Build & Test"]
     types:
       - completed
     branches:
