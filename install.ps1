@@ -36,7 +36,8 @@ if ($null -eq $visualization) {
     if ($vizConfirm -eq "y" -or $vizConfirm -eq "Y") {
         $visualization = "true"
         Write-ColorOutput "Installing BioLens with visualization features." "Green"
-    } else {
+    }
+    else {
         $visualization = "false"
         Write-ColorOutput "Installing standard BioLens version." "Green"
     }
@@ -45,7 +46,8 @@ if ($null -eq $visualization) {
 
 if ($visualization -eq "true") {
     $packageSuffix = "-viz"
-} else {
+}
+else {
     $packageSuffix = ""
 }
 
@@ -64,7 +66,8 @@ if ($version -eq "latest") {
             if ($visualization -eq "true") {
                 $altPackageName = "biolens-windows-x86_64.zip"
                 Write-ColorOutput "Falling back to standard version..." "Yellow"
-            } else {
+            }
+            else {
                 $altPackageName = "biolens-viz-windows-x86_64.zip"
                 Write-ColorOutput "Falling back to visualization version..." "Yellow"
             }
@@ -86,9 +89,18 @@ if ($version -eq "latest") {
     }
 }
 else {
+    # Handle version format without 'v' prefix
+    $formattedVersion = $version
+    
+    # Check if user supplied a version with 'v' prefix and remove it if necessary
+    if ($version.StartsWith("v")) {
+        Write-ColorOutput "Note: Version format now uses just numbers (e.g., 0.1.0) without 'v' prefix." "Yellow"
+        $formattedVersion = $version.Substring(1)
+    }
+    
     $packageName = "biolens$packageSuffix-windows-x86_64.zip"
-    $downloadUrl = "https://github.com/$repo/releases/download/$version/$packageName"
-    Write-ColorOutput "Installing version: $version" "Yellow"
+    $downloadUrl = "https://github.com/$repo/releases/download/$formattedVersion/$packageName"
+    Write-ColorOutput "Installing version: $formattedVersion" "Yellow"
 }
 
 Write-Output ""

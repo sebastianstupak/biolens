@@ -97,11 +97,20 @@ if [ "$VERSION" = "latest" ]; then
     fi
   fi
 
-  VERSION_FROM_URL=$(echo $RELEASE_URL | grep -o 'v[0-9]\+\.[0-9]\+\.[0-9]\+' || echo "latest")
+  # Update to extract either version pattern (with or without v prefix)
+  VERSION_FROM_URL=$(echo $RELEASE_URL | grep -o '[v]\{0,1\}[0-9]\+\.[0-9]\+\.[0-9]\+' || echo "latest")
   echo "Latest version: ${YELLOW}$VERSION_FROM_URL${NC}"
 else
-  RELEASE_URL="https://github.com/$REPO/releases/download/${VERSION}/biolens${PACKAGE_SUFFIX}-${TARGET}.${EXT}"
-  echo "Installing version: ${YELLOW}$VERSION${NC}"
+  # Handle version with or without 'v' prefix
+  FORMATTED_VERSION="$VERSION"
+  if echo "$VERSION" | grep -q "^v"; then
+    # If version starts with 'v', strip it for URL construction
+    FORMATTED_VERSION=$(echo "$VERSION" | sed 's/^v//')
+    echo "${YELLOW}Note: Version format now uses just numbers (e.g., 0.1.0) without 'v' prefix.${NC}"
+  fi
+  
+  RELEASE_URL="https://github.com/$REPO/releases/download/${FORMATTED_VERSION}/biolens${PACKAGE_SUFFIX}-${TARGET}.${EXT}"
+  echo "Installing version: ${YELLOW}$FORMATTED_VERSION${NC}"
 fi
 
 echo ""

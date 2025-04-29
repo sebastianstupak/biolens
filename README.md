@@ -51,20 +51,20 @@ $env:VISUALIZATION="true"; irm https://raw.githubusercontent.com/sebastianstupak
 
 ```bash
 # Specific version (interactive)
-VERSION=v0.1.0 curl -sSL https://raw.githubusercontent.com/sebastianstupak/biolens/main/install.sh | sh
+VERSION=0.0.1 curl -sSL https://raw.githubusercontent.com/sebastianstupak/biolens/main/install.sh | sh
 
 # Specific version with visualization
-VERSION=v0.1.0 VISUALIZATION=true curl -sSL https://raw.githubusercontent.com/sebastianstupak/biolens/main/install.sh | sh
+VERSION=0.0.1 VISUALIZATION=true curl -sSL https://raw.githubusercontent.com/sebastianstupak/biolens/main/install.sh | sh
 ```
 
 #### Windows (PowerShell)
 
 ```powershell
 # Specific version (interactive)
-$env:VERSION="v0.1.0"; irm https://raw.githubusercontent.com/sebastianstupak/biolens/main/install.ps1 | iex
+$env:VERSION="0.0.1"; irm https://raw.githubusercontent.com/sebastianstupak/biolens/main/install.ps1 | iex
 
 # Specific version with visualization
-$env:VERSION="v0.1.0"; $env:VISUALIZATION="true"; irm https://raw.githubusercontent.com/sebastianstupak/biolens/main/install.ps1 | iex
+$env:VERSION="0.0.1"; $env:VISUALIZATION="true"; irm https://raw.githubusercontent.com/sebastianstupak/biolens/main/install.ps1 | iex
 ```
 
 ### Manual Installation
