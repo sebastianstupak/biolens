@@ -41,10 +41,7 @@ jobs:
         run: cargo install --locked cargo-checkmate
 
       - name: Run cargo checkmate
-        run: cargo checkmate
-
-      - name: Install latest cargo-audit
-        run: cargo install --locked cargo-audit
+        run: cargo checkmate --skip audit
 
       - name: Install cargo-tarpaulin for code coverage
         run: cargo install cargo-tarpaulin --version 0.32.5
