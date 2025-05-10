@@ -1,21 +1,18 @@
 name: CI - Build & Test
 run-name: "${{ github.event_name == 'pull_request' && 'CI - Build & Test (PR)' || format('CI - Build & Test (#%s)', github.run_number) }}"
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 env:
   CARGO_TERM_COLOR: always
 jobs:
-  checkmate:
-    name: Cargo Checkmate
+  check:
+    name: Cargo Checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,14 +34,29 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install cargo-checkmate
-        run: cargo install --locked cargo-checkmate
+      - name: Cargo Check
+        run: cargo check --all-targets
 
-      - name: Install fixed cargo-audit from git
-        run: cargo install cargo-audit --locked --force --git https://github.com/rustsec/rustsec.git
+      - name: Cargo Format
+        run: cargo fmt --all -- --check
 
-      - name: Run cargo checkmate
-        run: cargo checkmate
+      - name: Cargo Clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Cargo Build
+        run: cargo build --all-targets
+
+      - name: Cargo Test
+        run: cargo test --all-targets
+
+      - name: Cargo Doc
+        run: cargo doc --no-deps
+
+      - name: Install latest cargo-audit
+        run: cargo install cargo-audit --locked
+
+      - name: Run cargo-audit
+        run: cargo audit
 
       - name: Install cargo-tarpaulin for code coverage
         run: cargo install cargo-tarpaulin --version 0.32.5
@@ -61,7 +73,7 @@ jobs:
 
   build:
     name: Build Binaries
-    needs: checkmate
+    needs: check
     if: success()
     uses: ./.github/workflows/ci-build.yml
     with:
