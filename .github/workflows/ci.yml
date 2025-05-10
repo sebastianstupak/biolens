@@ -1,5 +1,5 @@
 name: CI - Build & Test
-run-name: "${{ github.event_name == 'pull_request' && format('CI - Build & Test (PR #%s)', github.event.pull_request.number) || format('CI - Build & Test (#%s - %s)', github.run_number, github.event.head_commit.message || 'No message') }}"
+run-name: ${{ github.event_name == 'pull_request' && 'CI - Build & Test (PR #' || 'CI - Build & Test (#' }}${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_number }}${{ github.event_name == 'pull_request' && ')' || (github.event.head_commit.message && format(' - %s', github.event.head_commit.message) || '') }}
 
 on:
   push:
