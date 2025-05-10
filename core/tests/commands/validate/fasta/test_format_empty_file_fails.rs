@@ -1,11 +1,15 @@
 use super::utils::create_test_file;
-use biolens_core::commands::validate::fasta_validator;
+use biolens_core::commands::validate::fasta::{validator, ValidationOptions};
 
 #[test]
 fn test_format_empty_file_fails() {
     let content = "";
     let file = create_test_file(content);
+    let options = ValidationOptions::default();
+    let validation_result = validator::validate_fasta(file.path().to_str().unwrap(), options);
 
-    let result = fasta_validator::validate_fasta(file.path().to_str().unwrap());
-    assert!(!result, "Empty FASTA file should fail validation");
+    assert!(
+        !validation_result.is_valid,
+        "Empty FASTA file should fail validation"
+    );
 }
