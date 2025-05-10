@@ -18,7 +18,7 @@ jobs:
     name: Cargo Checkmate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -29,7 +29,7 @@ jobs:
           rustup component add rustfmt clippy
 
       - name: Cargo cache
-        uses: actions/cache@v3.3.2
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -50,7 +50,7 @@ jobs:
         run: cargo tarpaulin --workspace --features visualization --out Xml
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3.1.4
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./cobertura.xml
