@@ -1,12 +1,19 @@
 pub mod definition;
-pub mod fasta_validator;
 pub mod handler;
-pub mod sam_validator;
 
-use crate::commands::common::CommandMeta;
+pub mod common;
+pub mod fasta;
+pub mod formats;
+pub mod sam;
 
-pub const META: CommandMeta = CommandMeta {
+pub struct ModuleMetadata {
+    pub name: &'static str,
+    pub aliases: &'static [&'static str],
+    pub about: &'static str,
+}
+
+pub const META: ModuleMetadata = ModuleMetadata {
     name: "validate",
-    aliases: &["val"],
-    about: "Validate if the file is valid (FASTA, FASTQ, SAM/BAM, VCF, GFF, GTF)",
+    aliases: &["val", "check"],
+    about: "Validate bioinformatics file formats",
 };
