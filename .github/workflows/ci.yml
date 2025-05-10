@@ -40,8 +40,11 @@ jobs:
       - name: Install cargo-checkmate
         run: cargo install --locked cargo-checkmate
 
+      - name: Install fixed cargo-audit from git
+        run: cargo install cargo-audit --locked --force --git https://github.com/rustsec/rustsec.git
+
       - name: Run cargo checkmate
-        run: cargo checkmate --skip audit
+        run: cargo checkmate
 
       - name: Install cargo-tarpaulin for code coverage
         run: cargo install cargo-tarpaulin --version 0.32.5
