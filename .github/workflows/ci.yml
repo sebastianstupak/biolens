@@ -1,25 +1,79 @@
 name: CI - Build & Test
-run-name: CI - Build & Test (#${{ github.run_number }} - ${{ github.event.head_commit.message }})
-
+run-name: "${{ github.event_name == 'pull_request' && 'CI - Build & Test (PR)' || format('CI - Build & Test (#%s)', github.run_number) }}"
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
+env:
+  CARGO_TERM_COLOR: always
 jobs:
-  test:
-    name: Run Tests
-    uses: ./.github/workflows/ci-test.yml
-    secrets: inherit
+  check:
+    name: Cargo Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup override set stable
+          rustup component add rustfmt clippy
+
+      - name: Cargo cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cargo Check
+        run: cargo check --all-targets
+
+      - name: Cargo Format
+        run: cargo fmt --all -- --check
+
+      - name: Cargo Clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Cargo Build
+        run: cargo build --all-targets
+
+      - name: Cargo Test
+        run: cargo test --all-targets
+
+      - name: Cargo Doc
+        run: cargo doc --no-deps
+
+      - name: Install latest cargo-audit
+        run: cargo install cargo-audit --locked
+
+      - name: Run cargo-audit
+        run: cargo audit
+
+      - name: Install cargo-tarpaulin for code coverage
+        run: cargo install cargo-tarpaulin --version 0.32.5
+
+      - name: Generate code coverage
+        run: cargo tarpaulin --workspace --features visualization --out Xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./cobertura.xml
+          fail_ci_if_error: false
 
   build:
     name: Build Binaries
-    needs: test
+    needs: check
     if: success()
     uses: ./.github/workflows/ci-build.yml
     with:
