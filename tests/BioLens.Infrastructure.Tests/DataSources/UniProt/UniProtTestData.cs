@@ -1,0 +1,51 @@
+using System.Runtime.CompilerServices;
+
+namespace BioLens.Infrastructure.Tests.DataSources.UniProt;
+
+public static class UniProtTestData
+{
+    private static string? _cached;
+    
+    private static string GetProjectDirectory([CallerFilePath] string? callerFilePath = null)
+        => Path.GetDirectoryName(callerFilePath)!;
+    
+    private static string GetSnapshotPath() 
+        => Path.Combine(GetProjectDirectory(), "Snapshots", "p04637_snapshot.json");
+
+    public static async Task<string> GetSnapshotAsync()
+    {
+        if (_cached != null)
+            return _cached;
+
+        var snapshotPath = GetSnapshotPath();
+        
+        if (!File.Exists(snapshotPath))
+        {
+            var liveJson = await FetchLiveAsync();
+            await UpdateSnapshotAsync(liveJson);
+            _cached = liveJson;
+            return _cached;
+        }
+        
+        _cached = await File.ReadAllTextAsync(snapshotPath);
+        return _cached;
+    }
+
+    public static async Task<string> FetchLiveAsync()
+    {
+        var client = new HttpClient { BaseAddress = new Uri("https://rest.uniprot.org") };
+        var response = await client.GetAsync("uniprotkb/P04637.json");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync();
+    }
+
+    public static async Task UpdateSnapshotAsync(string json)
+    {
+        var snapshotPath = GetSnapshotPath();
+        var directory = Path.GetDirectoryName(snapshotPath);
+        if (!string.IsNullOrEmpty(directory))
+            Directory.CreateDirectory(directory);
+        
+        await File.WriteAllTextAsync(snapshotPath, json);
+    }
+}
