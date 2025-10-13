@@ -1,4 +1,4 @@
-name: CI - Nightly Integration Tests
+name: CI - Nightly Contract Tests
 
 on:
   schedule:
@@ -148,9 +148,9 @@ jobs:
                 failed=$(grep -o 'failed="[0-9]*"' "$trx" | head -1 | grep -o '[0-9]*')
           
                 if [ "${failed:-0}" -eq 0 ]; then
-                  status="PASS"
+                  status="✅"
                 else
-                  status="FAIL"
+                  status="❌"
                 fi
           
                 echo "| $datasource | $status | ${total:-0} | ${passed:-0} | ${failed:-0} |" >> $GITHUB_STEP_SUMMARY
