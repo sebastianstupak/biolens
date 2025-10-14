@@ -1,0 +1,76 @@
+name: CD - API Deployment
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+    branches:
+      - main
+
+env:
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  check-deployment:
+    name: Check Deployment Conditions
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    outputs:
+      should_deploy: ${{ steps.check.outputs.should_deploy }}
+      coverage: ${{ steps.get-artifacts.outputs.coverage }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Check if API changed
+        id: check
+        run: |
+          # Get the previous commit
+          PREV_COMMIT=$(git rev-parse HEAD~1)
+          CURR_COMMIT=${{ github.event.workflow_run.head_sha }}
+          
+          echo "Checking changes between $PREV_COMMIT and $CURR_COMMIT"
+          
+          # Check for API-related changes
+          CHANGED_FILES=$(git diff --name-only $PREV_COMMIT $CURR_COMMIT)
+          
+          if echo "$CHANGED_FILES" | grep -qE '^src/BioLens\.(API|Core|Infrastructure)/'; then
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+            echo "API changes detected - deployment required"
+          else
+            echo "should_deploy=false" >> $GITHUB_OUTPUT
+            echo "No API changes - skipping deployment"
+          fi
+
+  deploy-production:
+    name: Deploy to Staging
+    needs: check-deployment
+    if: needs.check-deployment.outputs.should_deploy == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.biolens.example.com
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore src/BioLens.API/BioLens.API.csproj
+
+      - name: Build for Release
+        run: |
+          dotnet publish src/BioLens.API/BioLens.API.csproj \
+            --configuration Release \
+            --output ./publish \
+            --no-restore
+
+      # TODO

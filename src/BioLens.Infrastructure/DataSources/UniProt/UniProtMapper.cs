@@ -146,8 +146,8 @@ public static class UniProtMapper
             .Select(f => new Domain
             {
                 Type = (f.Description ?? f.Type).ParseDomainType(),
-                Start = f.Location!.Start!.Value.Value,
-                End = f.Location!.End!.Value.Value,
+                Start = f.Location!.Start!.Value!.Value,
+                End = f.Location!.End!.Value!.Value,
                 Description = f.Description,
                 OriginalName = f.Description ?? f.Type
             })

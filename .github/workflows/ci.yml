@@ -1,0 +1,359 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - development
+  pull_request:
+    branches:
+      - main
+      - development
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  MINIMUM_COVERAGE: 80
+
+jobs:
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.changes.outputs.api }}
+      cli: ${{ steps.changes.outputs.cli }}
+      should_run: ${{ steps.changes.outputs.should_run }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed files
+        id: changes
+        run: |
+          # Determine base ref for comparison
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            BASE_REF="${{ github.event.pull_request.base.sha }}"
+          else
+            # For push events, compare with previous commit
+            BASE_REF="${{ github.event.before }}"
+            # If it's the first commit, compare with empty tree
+            if [ "$BASE_REF" == "0000000000000000000000000000000000000000" ]; then
+              BASE_REF=$(git hash-object -t tree /dev/null)
+            fi
+          fi
+          
+          echo "Comparing against: $BASE_REF"
+          
+          # Get list of changed files
+          CHANGED_FILES=$(git diff --name-only $BASE_REF ${{ github.sha }} || echo "")
+          
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+          
+          # Check for API changes
+          API_CHANGED=false
+          if echo "$CHANGED_FILES" | grep -qE '^src/BioLens\.(API|Core|Infrastructure)/'; then
+            API_CHANGED=true
+          fi
+          
+          # Check for CLI changes
+          CLI_CHANGED=false
+          if echo "$CHANGED_FILES" | grep -qE '^src/BioLens\.(CLI|Core)/'; then
+            CLI_CHANGED=true
+          fi
+          
+          # Set outputs
+          echo "api=$API_CHANGED" >> $GITHUB_OUTPUT
+          echo "cli=$CLI_CHANGED" >> $GITHUB_OUTPUT
+          
+          if [ "$API_CHANGED" == "true" ] || [ "$CLI_CHANGED" == "true" ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "API changed: $API_CHANGED"
+          echo "CLI changed: $CLI_CHANGED"
+
+  build-and-test:
+    name: Build & Test
+    needs: detect-changes
+    if: needs.detect-changes.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      coverage-percentage: ${{ steps.coverage-check.outputs.percentage }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Run Tests with Coverage
+        run: |
+          dotnet test \
+            --configuration Release \
+            --no-build \
+            --verbosity normal \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults \
+            --logger "trx;LogFileName=test-results.trx"
+
+      - name: Parse Coverage and Generate Report
+        id: coverage-check
+        run: |
+          # Find the coverage file
+          COVERAGE_FILE=$(find ./TestResults -name 'coverage.cobertura.xml' -print -quit)
+          
+          if [ -z "$COVERAGE_FILE" ]; then
+            echo "::error::No coverage file found"
+            exit 1
+          fi
+          
+          echo "Found coverage file: $COVERAGE_FILE"
+          
+          # Parse line-rate using grep and cut
+          LINE_RATE=$(grep -o 'line-rate="[^"]*"' "$COVERAGE_FILE" | head -1 | cut -d'"' -f2)
+          
+          # Convert to percentage
+          COVERAGE=$(awk "BEGIN {printf \"%.2f\", $LINE_RATE * 100}")
+          
+          echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
+          
+          # Extract additional metrics
+          LINES_COVERED=$(grep -o 'lines-covered="[^"]*"' "$COVERAGE_FILE" | head -1 | cut -d'"' -f2)
+          LINES_VALID=$(grep -o 'lines-valid="[^"]*"' "$COVERAGE_FILE" | head -1 | cut -d'"' -f2)
+          BRANCH_RATE=$(grep -o 'branch-rate="[^"]*"' "$COVERAGE_FILE" | head -1 | cut -d'"' -f2)
+          BRANCH_COVERAGE=$(awk "BEGIN {printf \"%.2f\", $BRANCH_RATE * 100}")
+          
+          # Create markdown summary
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## 📊 Code Coverage Report
+          
+          | Metric | Value |
+          |--------|-------|
+          | **Line Coverage** | **${COVERAGE}%** |
+          | **Branch Coverage** | ${BRANCH_COVERAGE}% |
+          | **Lines Covered** | ${LINES_COVERED} / ${LINES_VALID} |
+          
+          EOF
+          
+          if (( $(echo "$COVERAGE >= ${{ env.MINIMUM_COVERAGE }}" | bc -l) )); then
+            echo "✅ **Coverage meets minimum threshold of ${{ env.MINIMUM_COVERAGE }}%**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Coverage is below minimum threshold of ${{ env.MINIMUM_COVERAGE }}%**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: TestResults/**/*.trx
+          retention-days: 30
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: TestResults/**/coverage.cobertura.xml
+          retention-days: 30
+
+  coverage-gate:
+    name: Coverage Gate
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Coverage Threshold
+        run: |
+          COVERAGE=${{ needs.build-and-test.outputs.coverage-percentage }}
+          MINIMUM=${{ env.MINIMUM_COVERAGE }}
+          
+          echo "## Coverage Gate Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Current Coverage:** ${COVERAGE}%" >> $GITHUB_STEP_SUMMARY
+          echo "- **Minimum Required:** ${MINIMUM}%" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if (( $(echo "$COVERAGE < $MINIMUM" | bc -l) )); then
+            echo "❌ **Coverage gate FAILED!** Coverage is below minimum threshold." >> $GITHUB_STEP_SUMMARY
+            echo "::error::Code coverage ${COVERAGE}% is below minimum threshold of ${MINIMUM}%"
+            exit 1
+          else
+            echo "✅ **Coverage gate PASSED!** Coverage meets minimum threshold." >> $GITHUB_STEP_SUMMARY
+          fi
+
+  codeql-analysis:
+    name: CodeQL Analysis
+    needs: detect-changes
+    if: needs.detect-changes.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+          queries: security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:csharp"
+
+  dependency-audit:
+    name: Dependency Audit
+    needs: detect-changes
+    if: needs.detect-changes.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: List vulnerable packages
+        run: |
+          echo "## 🔒 Dependency Vulnerability Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerability-report.txt
+          
+          if grep -q "has the following vulnerable packages" vulnerability-report.txt; then
+            echo "⚠️ **Vulnerable packages detected!**" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat vulnerability-report.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "::error::Vulnerable packages detected!"
+            exit 1
+          else
+            echo "✅ No vulnerable packages detected." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload vulnerability report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vulnerability-report
+          path: vulnerability-report.txt
+          retention-days: 30
+
+  lint:
+    name: Linting & Format Check
+    needs: detect-changes
+    if: needs.detect-changes.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Run dotnet format
+        run: |
+          echo "## 🎨 Code Formatting Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          dotnet format --verify-no-changes --verbosity diagnostic 2>&1 | tee format-report.txt
+          
+          if [ $? -ne 0 ]; then
+            echo "❌ **Code formatting issues detected!**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Run \`dotnet format\` locally to fix formatting issues." >> $GITHUB_STEP_SUMMARY
+            echo "::error::Code formatting check failed. Run 'dotnet format' locally to fix."
+            exit 1
+          else
+            echo "✅ Code formatting is correct." >> $GITHUB_STEP_SUMMARY
+          fi
+
+  quality-gate:
+    name: Quality Gate
+    needs: [build-and-test, coverage-gate, codeql-analysis, dependency-audit, lint]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check all jobs passed
+        run: |
+          echo "# 🎯 Quality Gate Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ needs.build-and-test.result }}" == "success" ]]; then
+            echo "✅ Build & Test: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Build & Test: Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ needs.coverage-gate.result }}" == "success" ]]; then
+            echo "✅ Coverage Gate (${{ needs.build-and-test.outputs.coverage-percentage }}%): Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Coverage Gate: Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ needs.codeql-analysis.result }}" == "success" ]]; then
+            echo "✅ CodeQL Analysis: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ CodeQL Analysis: Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ needs.dependency-audit.result }}" == "success" ]]; then
+            echo "✅ Dependency Audit: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Dependency Audit: Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ needs.lint.result }}" == "success" ]]; then
+            echo "✅ Linting: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Linting: Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ needs.build-and-test.result }}" != "success" ]] || \
+             [[ "${{ needs.coverage-gate.result }}" != "success" ]] || \
+             [[ "${{ needs.codeql-analysis.result }}" != "success" ]] || \
+             [[ "${{ needs.dependency-audit.result }}" != "success" ]] || \
+             [[ "${{ needs.lint.result }}" != "success" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "❌ **Quality gate FAILED**" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Quality gate PASSED**" >> $GITHUB_STEP_SUMMARY
