@@ -312,50 +312,43 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - name: Check all jobs passed
+      - name: Check all jobs passed or skipped
         run: |
           echo "# 🎯 Quality Gate Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          if [[ "${{ needs.build-and-test.result }}" == "success" ]]; then
-            echo "✅ Build & Test: Passed" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Build & Test: Failed" >> $GITHUB_STEP_SUMMARY
-          fi
+          # Function to check if job passed (success or skipped)
+          check_job() {
+            local result=$1
+            local name=$2
+            local extra=$3
           
-          if [[ "${{ needs.coverage-gate.result }}" == "success" ]]; then
-            echo "✅ Coverage Gate (${{ needs.build-and-test.outputs.coverage-percentage }}%): Passed" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Coverage Gate: Failed" >> $GITHUB_STEP_SUMMARY
-          fi
+            if [[ "$result" == "success" ]]; then
+              echo "✅ $name: Passed$extra" >> $GITHUB_STEP_SUMMARY
+              return 0
+            elif [[ "$result" == "skipped" ]]; then
+              echo "⏭️  $name: Skipped (no changes)" >> $GITHUB_STEP_SUMMARY
+              return 0
+            else
+              echo "❌ $name: Failed" >> $GITHUB_STEP_SUMMARY
+              return 1
+            fi
+          }
           
-          if [[ "${{ needs.codeql-analysis.result }}" == "success" ]]; then
-            echo "✅ CodeQL Analysis: Passed" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ CodeQL Analysis: Failed" >> $GITHUB_STEP_SUMMARY
-          fi
+          # Check each job
+          FAILED=false
           
-          if [[ "${{ needs.dependency-audit.result }}" == "success" ]]; then
-            echo "✅ Dependency Audit: Passed" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Dependency Audit: Failed" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          if [[ "${{ needs.lint.result }}" == "success" ]]; then
-            echo "✅ Linting: Passed" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Linting: Failed" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          if [[ "${{ needs.build-and-test.result }}" != "success" ]] || \
-             [[ "${{ needs.coverage-gate.result }}" != "success" ]] || \
-             [[ "${{ needs.codeql-analysis.result }}" != "success" ]] || \
-             [[ "${{ needs.dependency-audit.result }}" != "success" ]] || \
-             [[ "${{ needs.lint.result }}" != "success" ]]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "❌ **Quality gate FAILED**" >> $GITHUB_STEP_SUMMARY
-            exit 1
-          fi
+          check_job "${{ needs.build-and-test.result }}" "Build & Test" "" || FAILED=true
+          check_job "${{ needs.coverage-gate.result }}" "Coverage Gate" " (${{ needs.build-and-test.outputs.coverage-percentage }}%)" || FAILED=true
+          check_job "${{ needs.codeql-analysis.result }}" "CodeQL Analysis" "" || FAILED=true
+          check_job "${{ needs.dependency-audit.result }}" "Dependency Audit" "" || FAILED=true
+          check_job "${{ needs.lint.result }}" "Linting" "" || FAILED=true
           
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **Quality gate PASSED**" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "$FAILED" = true ]; then
+            echo "❌ **Quality gate FAILED**" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "✅ **Quality gate PASSED**" >> $GITHUB_STEP_SUMMARY
+          fi
