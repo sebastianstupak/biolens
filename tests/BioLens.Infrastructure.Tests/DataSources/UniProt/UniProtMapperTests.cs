@@ -6,7 +6,7 @@ namespace BioLens.Infrastructure.Tests.DataSources.UniProt;
 public class UniProtMapperTests
 {
     [Fact]
-    public async Task MapToProteinValidResponseSuccess()
+    public async Task MapToProteinValidResponseSuccessAsync()
     {
         var json = await UniProtTestData.GetSnapshotAsync();
         var response = JsonSerializer.Deserialize<UniProtProteinResponse>(json);

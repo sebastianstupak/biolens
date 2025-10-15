@@ -44,37 +44,37 @@ jobs:
               BASE_REF=$(git hash-object -t tree /dev/null)
             fi
           fi
-          
+
           echo "Comparing against: $BASE_REF"
-          
+
           # Get list of changed files
           CHANGED_FILES=$(git diff --name-only $BASE_REF ${{ github.sha }} || echo "")
-          
+
           echo "Changed files:"
           echo "$CHANGED_FILES"
-          
+
           # Check for API changes
           API_CHANGED=false
           if echo "$CHANGED_FILES" | grep -qE '^src/BioLens\.(API|Core|Infrastructure)/'; then
             API_CHANGED=true
           fi
-          
+
           # Check for CLI changes
           CLI_CHANGED=false
           if echo "$CHANGED_FILES" | grep -qE '^src/BioLens\.(CLI|Core)/'; then
             CLI_CHANGED=true
           fi
-          
+
           # Set outputs
           echo "api=$API_CHANGED" >> $GITHUB_OUTPUT
           echo "cli=$CLI_CHANGED" >> $GITHUB_OUTPUT
-          
+
           if [ "$API_CHANGED" == "true" ] || [ "$CLI_CHANGED" == "true" ]; then
             echo "should_run=true" >> $GITHUB_OUTPUT
           else
             echo "should_run=false" >> $GITHUB_OUTPUT
           fi
-          
+
           echo "API changed: $API_CHANGED"
           echo "CLI changed: $CLI_CHANGED"
 
@@ -122,40 +122,40 @@ jobs:
         run: |
           # Find the coverage file
           COVERAGE_FILE=$(find ./TestResults -name 'coverage.cobertura.xml' -print -quit)
-          
+
           if [ -z "$COVERAGE_FILE" ]; then
             echo "::error::No coverage file found"
             exit 1
           fi
-          
+
           echo "Found coverage file: $COVERAGE_FILE"
-          
+
           # Parse line-rate using grep and cut
           LINE_RATE=$(grep -o 'line-rate="[^"]*"' "$COVERAGE_FILE" | head -1 | cut -d'"' -f2)
-          
+
           # Convert to percentage
           COVERAGE=$(awk "BEGIN {printf \"%.2f\", $LINE_RATE * 100}")
-          
+
           echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
-          
+
           # Extract additional metrics
           LINES_COVERED=$(grep -o 'lines-covered="[^"]*"' "$COVERAGE_FILE" | head -1 | cut -d'"' -f2)
           LINES_VALID=$(grep -o 'lines-valid="[^"]*"' "$COVERAGE_FILE" | head -1 | cut -d'"' -f2)
           BRANCH_RATE=$(grep -o 'branch-rate="[^"]*"' "$COVERAGE_FILE" | head -1 | cut -d'"' -f2)
           BRANCH_COVERAGE=$(awk "BEGIN {printf \"%.2f\", $BRANCH_RATE * 100}")
-          
+
           # Create markdown summary
           cat >> $GITHUB_STEP_SUMMARY << EOF
           ## 📊 Code Coverage Report
-          
+
           | Metric | Value |
           |--------|-------|
           | **Line Coverage** | **${COVERAGE}%** |
           | **Branch Coverage** | ${BRANCH_COVERAGE}% |
           | **Lines Covered** | ${LINES_COVERED} / ${LINES_VALID} |
-          
+
           EOF
-          
+
           if (( $(echo "$COVERAGE >= ${{ env.MINIMUM_COVERAGE }}" | bc -l) )); then
             echo "✅ **Coverage meets minimum threshold of ${{ env.MINIMUM_COVERAGE }}%**" >> $GITHUB_STEP_SUMMARY
           else
@@ -186,13 +186,13 @@ jobs:
         run: |
           COVERAGE=${{ needs.build-and-test.outputs.coverage-percentage }}
           MINIMUM=${{ env.MINIMUM_COVERAGE }}
-          
+
           echo "## Coverage Gate Check" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Current Coverage:** ${COVERAGE}%" >> $GITHUB_STEP_SUMMARY
           echo "- **Minimum Required:** ${MINIMUM}%" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if (( $(echo "$COVERAGE < $MINIMUM" | bc -l) )); then
             echo "❌ **Coverage gate FAILED!** Coverage is below minimum threshold." >> $GITHUB_STEP_SUMMARY
             echo "::error::Code coverage ${COVERAGE}% is below minimum threshold of ${MINIMUM}%"
@@ -253,7 +253,7 @@ jobs:
           echo "## 🔒 Dependency Vulnerability Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerability-report.txt
-          
+
           if grep -q "has the following vulnerable packages" vulnerability-report.txt; then
             echo "⚠️ **Vulnerable packages detected!**" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
@@ -293,10 +293,11 @@ jobs:
         run: |
           echo "## 🎨 Code Formatting Check" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           dotnet format --verify-no-changes --verbosity diagnostic 2>&1 | tee format-report.txt
-          
-          if [ $? -ne 0 ]; then
+
+          # Check for formatting errors
+          if grep -q "error" format-report.txt; then
             echo "❌ **Code formatting issues detected!**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "Run \`dotnet format\` locally to fix formatting issues." >> $GITHUB_STEP_SUMMARY
@@ -316,13 +317,13 @@ jobs:
         run: |
           echo "# 🎯 Quality Gate Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           # Function to check if job passed (success or skipped)
           check_job() {
             local result=$1
             local name=$2
             local extra=$3
-          
+
             if [[ "$result" == "success" ]]; then
               echo "✅ $name: Passed$extra" >> $GITHUB_STEP_SUMMARY
               return 0
@@ -334,18 +335,18 @@ jobs:
               return 1
             fi
           }
-          
+
           # Check each job
           FAILED=false
-          
+
           check_job "${{ needs.build-and-test.result }}" "Build & Test" "" || FAILED=true
           check_job "${{ needs.coverage-gate.result }}" "Coverage Gate" " (${{ needs.build-and-test.outputs.coverage-percentage }}%)" || FAILED=true
           check_job "${{ needs.codeql-analysis.result }}" "CodeQL Analysis" "" || FAILED=true
           check_job "${{ needs.dependency-audit.result }}" "Dependency Audit" "" || FAILED=true
           check_job "${{ needs.lint.result }}" "Linting" "" || FAILED=true
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "$FAILED" = true ]; then
             echo "❌ **Quality gate FAILED**" >> $GITHUB_STEP_SUMMARY
             exit 1

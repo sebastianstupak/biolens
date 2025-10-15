@@ -8,7 +8,7 @@ namespace BioLens.Infrastructure.Tests.DataSources.UniProt;
 public class UniProtContractTests
 {
     [Fact]
-    public async Task ContractAPIStructureUnchanged()
+    public async Task ContractAPIStructureUnchangedAsync()
     {
         var liveJson = await UniProtTestData.FetchLiveAsync();
         var snapshotJson = await UniProtTestData.GetSnapshotAsync();

@@ -1,6 +1,6 @@
+using System.Collections.ObjectModel;
 using BioLens.Core.Models;
 using BioLens.Core.Models.Enums;
-using System.Collections.ObjectModel;
 
 namespace BioLens.Infrastructure.DataSources.UniProt;
 
@@ -120,7 +120,7 @@ public static class UniProtMapper
         if (comments == null)
             return new List<string>();
 
-        #pragma warning disable S3267
+#pragma warning disable S3267
         var functions = new List<string>();
         foreach (var comment in comments.Where(c => c.CommentType == "FUNCTION" && c.Texts != null))
         {
@@ -134,7 +134,7 @@ public static class UniProtMapper
             }
         }
         return functions;
-        #pragma warning restore S3267
+#pragma warning restore S3267
     }
 
     private static List<string> ExtractSubunitStructure(IEnumerable<Comment>? comments)
@@ -142,7 +142,7 @@ public static class UniProtMapper
         if (comments == null)
             return new List<string>();
 
-        #pragma warning disable S3267
+#pragma warning disable S3267
         var subunits = new List<string>();
         foreach (var comment in comments.Where(c => c.CommentType == "SUBUNIT" && c.Texts != null))
         {
@@ -156,7 +156,7 @@ public static class UniProtMapper
             }
         }
         return subunits;
-        #pragma warning restore S3267
+#pragma warning restore S3267
     }
 
     private static List<Domain> ExtractDomains(IEnumerable<Feature>? features)
@@ -224,7 +224,7 @@ public static class UniProtMapper
         if (comments == null)
             return new List<Core.Models.Enums.SubcellularLocation>();
 
-        #pragma warning disable S3267
+#pragma warning disable S3267
         var uniqueLocations = new HashSet<Core.Models.Enums.SubcellularLocation>();
         foreach (var comment in comments.Where(c => c.CommentType == "SUBCELLULAR LOCATION" && c.SubcellularLocations != null))
         {
@@ -240,7 +240,7 @@ public static class UniProtMapper
             }
         }
         return uniqueLocations.ToList();
-        #pragma warning restore S3267
+#pragma warning restore S3267
     }
 
     private static List<string> ExtractKeywords(IEnumerable<Keyword>? keywords)

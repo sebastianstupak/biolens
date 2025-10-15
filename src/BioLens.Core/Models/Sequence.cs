@@ -11,27 +11,27 @@ public class Sequence
     /// The actual sequence string (amino acids or nucleotides).
     /// </summary>
     public required string Value { get; init; }
-    
+
     /// <summary>
     /// Length of the sequence.
     /// </summary>
     public required int Length { get; init; }
-    
+
     /// <summary>
     /// Type of biological sequence.
     /// </summary>
     public SequenceType Type { get; init; }
-    
+
     /// <summary>
     /// Molecular weight in Daltons.
     /// </summary>
     public int? MolecularWeight { get; init; }
-    
+
     /// <summary>
     /// CRC64 checksum for sequence integrity verification.
     /// </summary>
     public string? Crc64 { get; init; }
-    
+
     /// <summary>
     /// MD5 hash of the sequence.
     /// </summary>
