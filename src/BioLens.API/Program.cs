@@ -18,10 +18,10 @@ app.UseHttpsRedirection();
 
 app.MapGet("/api/v1/proteins/{id}", async (string id, UniProtClient client) =>
     {
-        var protein = await client.GetProteinAsync(id);
+        var protein = await client.GetProteinAsync(id).ConfigureAwait(false);
         return protein is not null ? Results.Ok(protein) : Results.NotFound();
     })
     .WithName("GetProtein")
     .WithOpenApi();
 
-app.Run();
+await app.RunAsync().ConfigureAwait(false);

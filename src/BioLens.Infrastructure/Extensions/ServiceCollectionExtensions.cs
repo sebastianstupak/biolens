@@ -21,7 +21,7 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration)
     {
         services.AddUniProtClient(configuration);
-        
+
         return services;
     }
 
@@ -32,6 +32,8 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        ArgumentNullException.ThrowIfNull(configuration);
+
         // Bind configuration - correct syntax
         var uniprotSection = configuration.GetSection(UniProtOptions.SectionName);
         services.Configure<UniProtOptions>(uniprotSection);
@@ -42,7 +44,7 @@ public static class ServiceCollectionExtensions
             var options = serviceProvider
                 .GetRequiredService<IOptions<UniProtOptions>>()
                 .Value;
-            
+
             ConfigureHttpClient(client, options.BaseUrl, options.TimeoutSeconds, options.UserAgent);
         })
         .AddHttpMessageHandler(serviceProvider =>
@@ -52,7 +54,7 @@ public static class ServiceCollectionExtensions
                 .Value;
             var logger = serviceProvider
                 .GetRequiredService<ILogger<RetryHandler>>();
-            
+
             return new RetryHandler(
                 logger,
                 options.MaxRetryAttempts,
@@ -67,35 +69,13 @@ public static class ServiceCollectionExtensions
     /// </summary>
     private static void ConfigureHttpClient(
         HttpClient client,
-        string baseUrl,
+        Uri baseUrl,
         int timeoutSeconds,
         string userAgent)
     {
-        client.BaseAddress = new Uri(baseUrl);
+        client.BaseAddress = baseUrl;
         client.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
         client.DefaultRequestHeaders.Add("User-Agent", userAgent);
         client.DefaultRequestHeaders.Add("Accept", "application/json");
-    }
-}
-
-/// <summary>
-/// Placeholder for STRING-DB client (to be implemented).
-/// </summary>
-public class StringDbClient
-{
-    private readonly HttpClient _httpClient;
-    private readonly ILogger<StringDbClient> _logger;
-
-    public StringDbClient(HttpClient httpClient, ILogger<StringDbClient> logger)
-    {
-        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        
-        if (_httpClient.BaseAddress == null)
-        {
-            throw new InvalidOperationException(
-                "HttpClient.BaseAddress must be configured. " +
-                "Configure it via AddStringDbClient or set it manually.");
-        }
     }
 }

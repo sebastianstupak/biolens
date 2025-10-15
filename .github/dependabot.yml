@@ -1,0 +1,56 @@
+
+version: 2
+updates:
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "nuget"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    reviewers:
+      - "sebastianstupak"
+    # Group minor and patch updates together
+    groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    # Ignore specific packages or versions
+    ignore:
+    # Example: ignore specific package
+    # - dependency-name: "Newtonsoft.Json"
+    #   versions: ["13.x"]
+    # Example: ignore major version updates for a package
+    # - dependency-name: "*"
+    #   update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    reviewers:
+      - "sebastianstupak"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

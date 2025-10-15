@@ -8,7 +8,7 @@ namespace BioLens.Infrastructure.Tests.DataSources.UniProt;
 public class UniProtContractTests
 {
     [Fact]
-    public async Task Contract_APIStructureUnchanged()
+    public async Task ContractAPIStructureUnchanged()
     {
         var liveJson = await UniProtTestData.FetchLiveAsync();
         var snapshotJson = await UniProtTestData.GetSnapshotAsync();
@@ -16,8 +16,10 @@ public class UniProtContractTests
         var liveStructure = ExtractStructure(JsonDocument.Parse(liveJson).RootElement);
         var snapshotStructure = ExtractStructure(JsonDocument.Parse(snapshotJson).RootElement);
 
-        var liveStructureJson = JsonSerializer.Serialize(liveStructure, new JsonSerializerOptions { WriteIndented = true });
-        var snapshotStructureJson = JsonSerializer.Serialize(snapshotStructure, new JsonSerializerOptions { WriteIndented = true });
+        var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+
+        var liveStructureJson = JsonSerializer.Serialize(liveStructure, jsonOptions);
+        var snapshotStructureJson = JsonSerializer.Serialize(snapshotStructure, jsonOptions);
 
         if (liveStructureJson != snapshotStructureJson)
         {
@@ -44,8 +46,8 @@ public class UniProtContractTests
             JsonValueKind.Array => new
             {
                 Type = "Array",
-                ItemType = element.GetArrayLength() > 0 
-                    ? ExtractStructure(element[0]) 
+                ItemType = element.GetArrayLength() > 0
+                    ? ExtractStructure(element[0])
                     : "Empty"
             },
             JsonValueKind.String => "String",

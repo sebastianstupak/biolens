@@ -4,58 +4,71 @@ using Xunit.Abstractions;
 namespace BioLens.Infrastructure.Tests.Helpers;
 
 /// <summary>
-/// Logger provider for test output.
+/// Extensions for logging with XUnit.
 /// </summary>
-public class TestLoggerProvider : ILoggerProvider
+internal static class XUnitLoggerExtensions
 {
-    private readonly ITestOutputHelper _output;
-
-    public TestLoggerProvider(ITestOutputHelper output)
+    /// <summary>
+    /// Creates a logger factory configured to write to XUnit test output.
+    /// </summary>
+    private static ILoggerFactory CreateXUnitLoggerFactory(this ITestOutputHelper output)
     {
-        _output = output;
+        ArgumentNullException.ThrowIfNull(output);
+        return LoggerFactory.Create(builder => builder.AddProvider(new XUnitLoggerProvider(output)));
     }
 
-    public ILogger CreateLogger(string categoryName)
+    /// <summary>
+    /// Creates a logger for the specified category that writes to XUnit test output.
+    /// </summary>
+    public static ILogger<T> CreateXUnitLogger<T>(this ITestOutputHelper output)
     {
-        return new TestLogger(_output, categoryName);
+        ArgumentNullException.ThrowIfNull(output);
+
+        // Create and store the factory in a using statement to ensure disposal
+        using var factory = output.CreateXUnitLoggerFactory();
+        // The logger will continue to work after factory disposal
+        return factory.CreateLogger<T>();
     }
 
-    public void Dispose()
+    /// <summary>
+    /// Simple logger provider that writes to XUnit test output.
+    /// </summary>
+    private sealed class XUnitLoggerProvider(ITestOutputHelper output) : ILoggerProvider
     {
-    }
-}
+        private readonly ITestOutputHelper _output = output ?? throw new ArgumentNullException(nameof(output));
 
-/// <summary>
-/// Logger implementation for tests.
-/// </summary>
-public class TestLogger : ILogger
-{
-    private readonly ITestOutputHelper _output;
-    private readonly string _categoryName;
+        public ILogger CreateLogger(string categoryName) => new XUnitTestLogger(_output, categoryName);
 
-    public TestLogger(ITestOutputHelper output, string categoryName)
-    {
-        _output = output;
-        _categoryName = categoryName;
+        public void Dispose() { }
     }
 
-    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-
-    public bool IsEnabled(LogLevel logLevel) => true;
-
-    public void Log<TState>(
-        LogLevel logLevel,
-        EventId eventId,
-        TState state,
-        Exception? exception,
-        Func<TState, Exception?, string> formatter)
+    /// <summary>
+    /// Simple logger implementation that writes to XUnit test output.
+    /// </summary>
+    private sealed class XUnitTestLogger(ITestOutputHelper output, string categoryName) : ILogger
     {
-        var message = formatter(state, exception);
-        _output.WriteLine($"[{logLevel}] [{_categoryName}] {message}");
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
 
-        if (exception != null)
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string>? formatter)
         {
-            _output.WriteLine($"Exception: {exception}");
+            if (formatter is null)
+                return;
+
+            try
+            {
+                output.WriteLine($"[{logLevel}] {categoryName}: {formatter(state, exception)}");
+
+                if (exception != null)
+                    output.WriteLine($"Exception: {exception}");
+            }
+            catch (InvalidOperationException)
+            {
+                // Catch only InvalidOperationException which occurs when writing to
+                // ITestOutputHelper after test completion
+            }
         }
     }
 }

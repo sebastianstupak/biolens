@@ -9,67 +9,67 @@ public enum SubcellularLocation
     /// Cell nucleus - contains genetic material.
     /// </summary>
     Nucleus,
-    
+
     /// <summary>
     /// Cytoplasm - fluid inside the cell.
     /// </summary>
     Cytoplasm,
-    
+
     /// <summary>
     /// Cell membrane - outer boundary of the cell.
     /// </summary>
     Membrane,
-    
+
     /// <summary>
     /// Mitochondrion - cellular energy production.
     /// </summary>
     Mitochondrion,
-    
+
     /// <summary>
     /// Endoplasmic reticulum - protein synthesis and processing.
     /// </summary>
     EndoplasmicReticulum,
-    
+
     /// <summary>
     /// Golgi apparatus - protein modification and sorting.
     /// </summary>
     Golgi,
-    
+
     /// <summary>
     /// Lysosome - cellular digestion.
     /// </summary>
     Lysosome,
-    
+
     /// <summary>
     /// Peroxisome - fatty acid metabolism.
     /// </summary>
     Peroxisome,
-    
+
     /// <summary>
     /// Secreted outside the cell.
     /// </summary>
     Secreted,
-    
+
     /// <summary>
     /// Extracellular matrix - outside cells in tissues.
     /// </summary>
     ExtracellularMatrix,
-    
+
     /// <summary>
     /// Cell projection (e.g., flagellum, cilium).
     /// </summary>
     CellProjection,
-    
+
     /// <summary>
     /// Cytoskeleton - structural framework of the cell.
     /// </summary>
     Cytoskeleton,
-    
+
     /// <summary>
     /// Multiple or various locations.
     /// </summary>
     Multiple,
-    
+
     /// <summary>
     /// Location not specified or unknown.
     /// </summary>
@@ -87,22 +87,25 @@ public static class EnumSubcelullarLocationExtension
     {
         if (string.IsNullOrWhiteSpace(value))
             return SubcellularLocation.Unknown;
-        
-        var normalized = value.Replace(" ", "").ToLowerInvariant();
-        
+
+        var normalized = value
+            .Replace(" ", "", StringComparison.Ordinal)
+            .ToUpperInvariant();
+
         return normalized switch
         {
-            _ when normalized.Contains("nucleus") => SubcellularLocation.Nucleus,
-            _ when normalized.Contains("cytoplasm") => SubcellularLocation.Cytoplasm,
-            _ when normalized.Contains("membrane") => SubcellularLocation.Membrane,
-            _ when normalized.Contains("mitochondri") => SubcellularLocation.Mitochondrion,
-            _ when normalized.Contains("endoplasmic") || normalized.Contains("er") => SubcellularLocation.EndoplasmicReticulum,
-            _ when normalized.Contains("golgi") => SubcellularLocation.Golgi,
-            _ when normalized.Contains("lysosome") => SubcellularLocation.Lysosome,
-            _ when normalized.Contains("peroxisome") => SubcellularLocation.Peroxisome,
-            _ when normalized.Contains("secret") => SubcellularLocation.Secreted,
-            _ when normalized.Contains("extracellular") => SubcellularLocation.ExtracellularMatrix,
-            _ when normalized.Contains("cytoskeleton") => SubcellularLocation.Cytoskeleton,
+            _ when normalized.Contains("NUCLEUS", StringComparison.Ordinal) => SubcellularLocation.Nucleus,
+            _ when normalized.Contains("CYTOPLASM", StringComparison.Ordinal) => SubcellularLocation.Cytoplasm,
+            _ when normalized.Contains("MEMBRANE", StringComparison.Ordinal) => SubcellularLocation.Membrane,
+            _ when normalized.Contains("MITOCHONDRI", StringComparison.Ordinal) => SubcellularLocation.Mitochondrion,
+            _ when normalized.Contains("ENDOPLASMIC", StringComparison.Ordinal) ||
+                   normalized.Contains("ER", StringComparison.Ordinal) => SubcellularLocation.EndoplasmicReticulum,
+            _ when normalized.Contains("GOLGI", StringComparison.Ordinal) => SubcellularLocation.Golgi,
+            _ when normalized.Contains("LYSOSOME", StringComparison.Ordinal) => SubcellularLocation.Lysosome,
+            _ when normalized.Contains("PEROXISOME", StringComparison.Ordinal) => SubcellularLocation.Peroxisome,
+            _ when normalized.Contains("SECRET", StringComparison.Ordinal) => SubcellularLocation.Secreted,
+            _ when normalized.Contains("EXTRACELLULAR", StringComparison.Ordinal) => SubcellularLocation.ExtracellularMatrix,
+            _ when normalized.Contains("CYTOSKELETON", StringComparison.Ordinal) => SubcellularLocation.Cytoskeleton,
             _ => SubcellularLocation.Unknown
         };
     }

@@ -16,7 +16,7 @@ public class UniProtClient
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        
+
         if (_httpClient.BaseAddress == null)
         {
             throw new InvalidOperationException(
@@ -31,12 +31,13 @@ public class UniProtClient
     public async Task<Protein?> GetProteinAsync(string id, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
-        
+
         try
         {
             _logger.LogInformation("Fetching protein {ProteinId} from UniProt", id);
 
-            var response = await _httpClient.GetAsync($"uniprotkb/{id}.json", cancellationToken);
+            var uri = new Uri($"uniprotkb/{id}.json", UriKind.Relative);
+            var response = await _httpClient.GetAsync(uri, cancellationToken).ConfigureAwait(false);
 
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
@@ -47,7 +48,7 @@ public class UniProtClient
             response.EnsureSuccessStatusCode();
 
             var uniprotResponse = await response.Content.ReadFromJsonAsync<UniProtProteinResponse>(
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken).ConfigureAwait(false);
 
             if (uniprotResponse == null)
             {
@@ -63,12 +64,7 @@ public class UniProtClient
         catch (HttpRequestException ex)
         {
             _logger.LogError(ex, "HTTP error fetching protein {ProteinId}", id);
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unexpected error fetching protein {ProteinId}", id);
-            throw;
+            return null;
         }
     }
 }

@@ -9,97 +9,97 @@ public enum DomainType
     /// DNA-binding domain that interacts with DNA sequences.
     /// </summary>
     DnaBinding,
-    
+
     /// <summary>
     /// Protein kinase domain that phosphorylates other proteins.
     /// </summary>
     Kinase,
-    
+
     /// <summary>
     /// Transcriptional activation domain.
     /// </summary>
     Transactivation,
-    
+
     /// <summary>
     /// Domain responsible for protein oligomerization.
     /// </summary>
     Tetramerization,
-    
+
     /// <summary>
     /// Domain responsible for protein dimerization.
     /// </summary>
     Dimerization,
-    
+
     /// <summary>
     /// Transmembrane domain that spans cellular membranes.
     /// </summary>
     Transmembrane,
-    
+
     /// <summary>
     /// Signal peptide for protein targeting and secretion.
     /// </summary>
     SignalPeptide,
-    
+
     /// <summary>
     /// Zinc finger DNA-binding domain.
     /// </summary>
     ZincFinger,
-    
+
     /// <summary>
     /// Immunoglobulin-like domain.
     /// </summary>
     Immunoglobulin,
-    
+
     /// <summary>
     /// SH2 domain (Src Homology 2) for phosphotyrosine binding.
     /// </summary>
     Sh2,
-    
+
     /// <summary>
     /// SH3 domain (Src Homology 3) for proline-rich sequence binding.
     /// </summary>
     Sh3,
-    
+
     /// <summary>
     /// Catalytic domain containing enzymatic active site.
     /// </summary>
     Catalytic,
-    
+
     /// <summary>
     /// Regulatory domain that modulates protein activity.
     /// </summary>
     Regulatory,
-    
+
     /// <summary>
     /// Generic structural domain.
     /// </summary>
     Domain,
-    
+
     /// <summary>
     /// Functional region that doesn't constitute a complete domain.
     /// </summary>
     Region,
-    
+
     /// <summary>
     /// Short conserved sequence motif.
     /// </summary>
     Motif,
-    
+
     /// <summary>
     /// Repeat sequence element.
     /// </summary>
     Repeat,
-    
+
     /// <summary>
     /// Coiled coil structural element.
     /// </summary>
     CoiledCoil,
-    
+
     /// <summary>
     /// Compositionally biased region (e.g., low complexity).
     /// </summary>
     CompositionallyBiased,
-    
+
     /// <summary>
     /// Domain type not categorized or unknown.
     /// </summary>
@@ -117,29 +117,36 @@ public static class EnumDomainTypeExtension
     {
         if (string.IsNullOrWhiteSpace(value))
             return DomainType.Other;
-        
-        var normalized = value.Replace(" ", "").Replace("-", "").ToLowerInvariant();
-        
+
+        var normalized = value
+            .Replace(" ", "", StringComparison.Ordinal)
+            .Replace("-", "", StringComparison.Ordinal)
+            .ToUpperInvariant(); // Changed from ToLowerInvariant
+
         return normalized switch
         {
-            _ when normalized.Contains("dnabinding") || normalized.Contains("dna-binding") => DomainType.DnaBinding,
-            _ when normalized.Contains("kinase") => DomainType.Kinase,
-            _ when normalized.Contains("transactivation") => DomainType.Transactivation,
-            _ when normalized.Contains("tetramerization") => DomainType.Tetramerization,
-            _ when normalized.Contains("dimerization") => DomainType.Dimerization,
-            _ when normalized.Contains("transmembrane") => DomainType.Transmembrane,
-            _ when normalized.Contains("signal") => DomainType.SignalPeptide,
-            _ when normalized.Contains("zincfinger") || normalized.Contains("znf") => DomainType.ZincFinger,
-            _ when normalized.Contains("immunoglobulin") || normalized.Contains("ig") => DomainType.Immunoglobulin,
-            _ when normalized.Contains("sh2") => DomainType.Sh2,
-            _ when normalized.Contains("sh3") => DomainType.Sh3,
-            _ when normalized.Contains("catalytic") => DomainType.Catalytic,
-            _ when normalized.Contains("regulatory") => DomainType.Regulatory,
-            _ when normalized.Contains("motif") => DomainType.Motif,
-            _ when normalized.Contains("repeat") => DomainType.Repeat,
-            _ when normalized.Contains("coiledcoil") || normalized.Contains("coiled-coil") => DomainType.CoiledCoil,
-            _ when normalized.Contains("region") => DomainType.Region,
-            "domain" => DomainType.Domain,
+            _ when normalized.Contains("DNABINDING", StringComparison.Ordinal) ||
+                   normalized.Contains("DNA-BINDING", StringComparison.Ordinal) => DomainType.DnaBinding,
+            _ when normalized.Contains("KINASE", StringComparison.Ordinal) => DomainType.Kinase,
+            _ when normalized.Contains("TRANSACTIVATION", StringComparison.Ordinal) => DomainType.Transactivation,
+            _ when normalized.Contains("TETRAMERIZATION", StringComparison.Ordinal) => DomainType.Tetramerization,
+            _ when normalized.Contains("DIMERIZATION", StringComparison.Ordinal) => DomainType.Dimerization,
+            _ when normalized.Contains("TRANSMEMBRANE", StringComparison.Ordinal) => DomainType.Transmembrane,
+            _ when normalized.Contains("SIGNAL", StringComparison.Ordinal) => DomainType.SignalPeptide,
+            _ when normalized.Contains("ZINCFINGER", StringComparison.Ordinal) ||
+                   normalized.Contains("ZNF", StringComparison.Ordinal) => DomainType.ZincFinger,
+            _ when normalized.Contains("IMMUNOGLOBULIN", StringComparison.Ordinal) ||
+                   normalized.Contains("IG", StringComparison.Ordinal) => DomainType.Immunoglobulin,
+            _ when normalized.Contains("SH2", StringComparison.Ordinal) => DomainType.Sh2,
+            _ when normalized.Contains("SH3", StringComparison.Ordinal) => DomainType.Sh3,
+            _ when normalized.Contains("CATALYTIC", StringComparison.Ordinal) => DomainType.Catalytic,
+            _ when normalized.Contains("REGULATORY", StringComparison.Ordinal) => DomainType.Regulatory,
+            _ when normalized.Contains("MOTIF", StringComparison.Ordinal) => DomainType.Motif,
+            _ when normalized.Contains("REPEAT", StringComparison.Ordinal) => DomainType.Repeat,
+            _ when normalized.Contains("COILEDCOIL", StringComparison.Ordinal) ||
+                   normalized.Contains("COILED-COIL", StringComparison.Ordinal) => DomainType.CoiledCoil,
+            _ when normalized.Contains("REGION", StringComparison.Ordinal) => DomainType.Region,
+            "DOMAIN" => DomainType.Domain,
             _ => DomainType.Other
         };
     }
