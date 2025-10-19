@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 
 namespace BioLens.Infrastructure.DataSources.UniProt;
@@ -15,7 +14,7 @@ public record UniProtProteinResponse
     public required string PrimaryAccession { get; init; }
 
     [JsonPropertyName("secondaryAccessions")]
-    public ReadOnlyCollection<string>? SecondaryAccessions { get; init; }
+    public IReadOnlyCollection<string>? SecondaryAccessions { get; init; }
 
     [JsonPropertyName("uniProtkbId")]
     public string? UniProtkbId { get; init; }
@@ -36,22 +35,22 @@ public record UniProtProteinResponse
     public ProteinDescription? ProteinDescription { get; init; }
 
     [JsonPropertyName("genes")]
-    public ReadOnlyCollection<Gene>? Genes { get; init; }
+    public IReadOnlyCollection<Gene>? Genes { get; init; }
 
     [JsonPropertyName("comments")]
-    public ReadOnlyCollection<Comment>? Comments { get; init; }
+    public IReadOnlyCollection<Comment>? Comments { get; init; }
 
     [JsonPropertyName("features")]
-    public ReadOnlyCollection<Feature>? Features { get; init; }
+    public IReadOnlyCollection<Feature>? Features { get; init; }
 
     [JsonPropertyName("keywords")]
-    public ReadOnlyCollection<Keyword>? Keywords { get; init; }
+    public IReadOnlyCollection<Keyword>? Keywords { get; init; }
 
     [JsonPropertyName("references")]
-    public ReadOnlyCollection<Reference>? References { get; init; }
+    public IReadOnlyCollection<Reference>? References { get; init; }
 
     [JsonPropertyName("uniProtKBCrossReferences")]
-    public ReadOnlyCollection<UniProtCrossReference>? UniProtKBCrossReferences { get; init; }
+    public IReadOnlyCollection<UniProtCrossReference>? UniProtKBCrossReferences { get; init; }
 
     [JsonPropertyName("sequence")]
     public SequenceInfo? Sequence { get; init; }
@@ -87,7 +86,7 @@ public record UniProtOrganism
     public int TaxonId { get; init; }
 
     [JsonPropertyName("lineage")]
-    public ReadOnlyCollection<string>? Lineage { get; init; }
+    public IReadOnlyCollection<string>? Lineage { get; init; }
 }
 
 public record ProteinDescription
@@ -96,10 +95,10 @@ public record ProteinDescription
     public RecommendedName? RecommendedName { get; init; }
 
     [JsonPropertyName("alternativeNames")]
-    public ReadOnlyCollection<AlternativeName>? AlternativeNames { get; init; }
+    public IReadOnlyCollection<AlternativeName>? AlternativeNames { get; init; }
 
     [JsonPropertyName("submissionNames")]
-    public ReadOnlyCollection<SubmissionName>? SubmissionNames { get; init; }
+    public IReadOnlyCollection<SubmissionName>? SubmissionNames { get; init; }
 }
 
 public record RecommendedName
@@ -108,10 +107,10 @@ public record RecommendedName
     public NameValue? FullName { get; init; }
 
     [JsonPropertyName("shortNames")]
-    public ReadOnlyCollection<NameValue>? ShortNames { get; init; }
+    public IReadOnlyCollection<NameValue>? ShortNames { get; init; }
 
     [JsonPropertyName("ecNumbers")]
-    public ReadOnlyCollection<EcNumber>? EcNumbers { get; init; }
+    public IReadOnlyCollection<EcNumber>? EcNumbers { get; init; }
 }
 
 public record AlternativeName
@@ -120,7 +119,7 @@ public record AlternativeName
     public NameValue? FullName { get; init; }
 
     [JsonPropertyName("shortNames")]
-    public ReadOnlyCollection<NameValue>? ShortNames { get; init; }
+    public IReadOnlyCollection<NameValue>? ShortNames { get; init; }
 }
 
 public record SubmissionName
@@ -147,13 +146,13 @@ public record Gene
     public GeneName? GeneName { get; init; }
 
     [JsonPropertyName("synonyms")]
-    public ReadOnlyCollection<GeneName>? Synonyms { get; init; }
+    public IReadOnlyCollection<GeneName>? Synonyms { get; init; }
 
     [JsonPropertyName("orderedLocusNames")]
-    public ReadOnlyCollection<OrderedLocusName>? OrderedLocusNames { get; init; }
+    public IReadOnlyCollection<OrderedLocusName>? OrderedLocusNames { get; init; }
 
     [JsonPropertyName("orfNames")]
-    public ReadOnlyCollection<OrfName>? OrfNames { get; init; }
+    public IReadOnlyCollection<OrfName>? OrfNames { get; init; }
 }
 
 public record GeneName
@@ -180,13 +179,13 @@ public record Comment
     public required string CommentType { get; init; }
 
     [JsonPropertyName("texts")]
-    public ReadOnlyCollection<CommentText>? Texts { get; init; }
+    public IReadOnlyCollection<CommentText>? Texts { get; init; }
 
     [JsonPropertyName("subcellularLocations")]
-    public ReadOnlyCollection<SubcellularLocation>? SubcellularLocations { get; init; }
+    public IReadOnlyCollection<SubcellularLocation>? SubcellularLocations { get; init; }
 
     [JsonPropertyName("interactions")]
-    public ReadOnlyCollection<Interaction>? Interactions { get; init; }
+    public IReadOnlyCollection<Interaction>? Interactions { get; init; }
 }
 
 public record CommentText
@@ -252,7 +251,7 @@ public record Feature
     public string? FeatureId { get; init; }
 
     [JsonPropertyName("evidences")]
-    public ReadOnlyCollection<Evidence>? Evidences { get; init; }
+    public IReadOnlyCollection<Evidence>? Evidences { get; init; }
 }
 
 public record FeatureLocation
@@ -306,7 +305,7 @@ public record Reference
     public Citation? Citation { get; init; }
 
     [JsonPropertyName("referencePositions")]
-    public ReadOnlyCollection<string>? ReferencePositions { get; init; }
+    public IReadOnlyCollection<string>? ReferencePositions { get; init; }
 }
 
 public record Citation
@@ -318,10 +317,10 @@ public record Citation
     public string? CitationType { get; init; }
 
     [JsonPropertyName("authors")]
-    public ReadOnlyCollection<string>? Authors { get; init; }
+    public IReadOnlyCollection<string>? Authors { get; init; }
 
     [JsonPropertyName("citationCrossReferences")]
-    public ReadOnlyCollection<CitationCrossReference>? CitationCrossReferences { get; init; }
+    public IReadOnlyCollection<CitationCrossReference>? CitationCrossReferences { get; init; }
 
     [JsonPropertyName("title")]
     public string? Title { get; init; }
@@ -360,7 +359,7 @@ public record UniProtCrossReference
     public required string Id { get; init; }
 
     [JsonPropertyName("properties")]
-    public ReadOnlyCollection<CrossReferenceProperty>? Properties { get; init; }
+    public IReadOnlyCollection<CrossReferenceProperty>? Properties { get; init; }
 
     [JsonPropertyName("isoformId")]
     public string? IsoformId { get; init; }
